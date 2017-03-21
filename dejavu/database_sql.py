@@ -75,12 +75,13 @@ class SQLDatabase(Database):
             `%s` varchar(250) not null,
             `%s` tinyint default 0,
             `%s` binary(20) not null,
+            `%s` varchar(128),
         PRIMARY KEY (`%s`),
         UNIQUE KEY `%s` (`%s`)
     ) ENGINE=INNODB;""" % (
-        SONGS_TABLENAME, Database.FIELD_SONG_ID, Database.FIELD_SONGNAME, FIELD_FINGERPRINTED,
-        Database.FIELD_FILE_SHA1,
-        Database.FIELD_SONG_ID, Database.FIELD_SONG_ID, Database.FIELD_SONG_ID,
+        SONGS_TABLENAME,
+        Database.FIELD_SONG_ID, Database.FIELD_SONGNAME, FIELD_FINGERPRINTED, Database.FIELD_FILE_SHA1, Database.FIELD_SONGGROUP,
+        Database.FIELD_SONG_ID, Database.FIELD_SONG_ID, Database.FIELD_SONG_ID
     )
 
     # inserts (ignores duplicates)
@@ -89,8 +90,8 @@ class SQLDatabase(Database):
             (UNHEX(%%s), %%s, %%s);
     """ % (FINGERPRINTS_TABLENAME, Database.FIELD_HASH, Database.FIELD_SONG_ID, Database.FIELD_OFFSET)
 
-    INSERT_SONG = "INSERT INTO %s (%s, %s) values (%%s, UNHEX(%%s));" % (
-        SONGS_TABLENAME, Database.FIELD_SONGNAME, Database.FIELD_FILE_SHA1)
+    INSERT_SONG = "INSERT INTO %s (%s, %s, %s) values (%%s, UNHEX(%%s), %%s);" % (
+        SONGS_TABLENAME, Database.FIELD_SONGNAME, Database.FIELD_FILE_SHA1, Database.FIELD_SONGGROUP)
 
     # selects
     SELECT = """
@@ -234,12 +235,13 @@ class SQLDatabase(Database):
         with self.cursor() as cur:
             cur.execute(self.INSERT_FINGERPRINT, (hash, sid, offset))
 
-    def insert_song(self, songname, file_hash):
+    def insert_song(self, songname, file_hash, group=None):
         """
         Inserts song in the database and returns the ID of the inserted record.
         """
+        print self.INSERT_SONG.format(songname, file_hash, group)
         with self.cursor() as cur:
-            cur.execute(self.INSERT_SONG, (songname, file_hash))
+            cur.execute(self.INSERT_SONG, (songname, file_hash, group))
             return cur.lastrowid
 
     def query(self, hash):

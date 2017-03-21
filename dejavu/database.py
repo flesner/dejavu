@@ -8,6 +8,7 @@ class Database(object):
     FIELD_FILE_SHA1 = 'file_sha1'
     FIELD_SONG_ID = 'song_id'
     FIELD_SONGNAME = 'song_name'
+    FIELD_SONGGROUP = 'song_group'
     FIELD_OFFSET = 'offset'
     FIELD_HASH = 'hash'
 
@@ -104,7 +105,7 @@ class Database(object):
         pass
 
     @abc.abstractmethod
-    def insert_song(self, song_name):
+    def insert_song(self, song_name, group):
         """
         Inserts a song name into the database, returns the new
         identifier of the song.

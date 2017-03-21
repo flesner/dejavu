@@ -42,7 +42,7 @@ class Dejavu(object):
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.songhashes_set.add(song_hash)
 
-    def fingerprint_directory(self, path, extensions, nprocesses=None):
+    def fingerprint_directory(self, path, extensions, nprocesses=None, group=None):
         # Try to use the maximum amount of processes if not given.
         try:
             nprocesses = nprocesses or multiprocessing.cpu_count()
@@ -84,7 +84,7 @@ class Dejavu(object):
                 # Print traceback because we can't reraise it here
                 traceback.print_exc(file=sys.stdout)
             else:
-                sid = self.db.insert_song(song_name, file_hash)
+                sid = self.db.insert_song(song_name, file_hash, group)
 
                 self.db.insert_hashes(sid, hashes)
                 self.db.set_song_fingerprinted(sid)
@@ -93,24 +93,26 @@ class Dejavu(object):
         pool.close()
         pool.join()
 
-    def fingerprint_file(self, filepath, song_name=None):
+    def fingerprint_file(self, filepath, song_name=None, group=None):
         songname = decoder.path_to_songname(filepath)
         song_hash = decoder.unique_hash(filepath)
         song_name = song_name or songname
         # don't refingerprint already fingerprinted files
         if song_hash in self.songhashes_set:
             print "%s already fingerprinted, continuing..." % song_name
+            sid = None
         else:
             song_name, hashes, file_hash = _fingerprint_worker(
                 filepath,
                 self.limit,
                 song_name=song_name
             )
-            sid = self.db.insert_song(song_name, file_hash)
+            sid = self.db.insert_song(song_name, file_hash, group)
 
             self.db.insert_hashes(sid, hashes)
             self.db.set_song_fingerprinted(sid)
             self.get_fingerprinted_songs()
+        return sid
 
     def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
         hashes = fingerprint.fingerprint(samples, Fs=Fs)
