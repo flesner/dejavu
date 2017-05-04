@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import (generate_binary_structure,
                                       iterate_structure, binary_erosion)
@@ -116,16 +116,16 @@ def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     frequency_idx = [x[1] for x in peaks_filtered]
     time_idx = [x[0] for x in peaks_filtered]
 
-    if plot:
-        # scatter of the peaks
-        fig, ax = plt.subplots()
-        ax.imshow(arr2D)
-        ax.scatter(time_idx, frequency_idx)
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Frequency')
-        ax.set_title("Spectrogram")
-        plt.gca().invert_yaxis()
-        plt.show()
+    # if plot:
+    #     # scatter of the peaks
+    #     fig, ax = plt.subplots()
+    #     ax.imshow(arr2D)
+    #     ax.scatter(time_idx, frequency_idx)
+    #     ax.set_xlabel('Time')
+    #     ax.set_ylabel('Frequency')
+    #     ax.set_title("Spectrogram")
+    #     plt.gca().invert_yaxis()
+    #     plt.show()
 
     return zip(frequency_idx, time_idx)
 
@@ -142,7 +142,7 @@ def generate_hashes(peaks, fan_value=DEFAULT_FAN_VALUE):
     for i in range(len(peaks)):
         for j in range(1, fan_value):
             if (i + j) < len(peaks):
-                
+
                 freq1 = peaks[i][IDX_FREQ_I]
                 freq2 = peaks[i + j][IDX_FREQ_I]
                 t1 = peaks[i][IDX_TIME_J]
