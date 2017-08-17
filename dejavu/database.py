@@ -78,9 +78,9 @@ class Database(object):
         pass
 
     @abc.abstractmethod
-    def get_songs(self):
+    def get_songs(self,group):
         """
-        Returns all fully fingerprinted songs in the database.
+        Returns all fully fingerprinted songs in the database in the given group.
         """
         pass
 

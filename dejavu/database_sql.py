@@ -77,11 +77,12 @@ class SQLDatabase(Database):
             `%s` binary(20) not null,
             `%s` varchar(128),
         PRIMARY KEY (`%s`),
-        UNIQUE KEY `%s` (`%s`)
+        UNIQUE KEY `%s` (`%s`),
+        INDEX (`%s`)
     ) ENGINE=INNODB;""" % (
         SONGS_TABLENAME,
         Database.FIELD_SONG_ID, Database.FIELD_SONGNAME, FIELD_FINGERPRINTED, Database.FIELD_FILE_SHA1, Database.FIELD_SONGGROUP,
-        Database.FIELD_SONG_ID, Database.FIELD_SONG_ID, Database.FIELD_SONG_ID
+        Database.FIELD_SONG_ID, Database.FIELD_SONG_ID, Database.FIELD_SONG_ID, Database.FIELD_SONGGROUP
     )
 
     # inserts (ignores duplicates)
@@ -120,9 +121,9 @@ class SQLDatabase(Database):
     """ % (Database.FIELD_SONG_ID, SONGS_TABLENAME, FIELD_FINGERPRINTED)
 
     SELECT_SONGS = """
-        SELECT %s, %s, HEX(%s) as %s FROM %s WHERE %s = 1;
+        SELECT %s, %s, HEX(%s) as %s FROM %s WHERE %s = %%s and %s = 1;
     """ % (Database.FIELD_SONG_ID, Database.FIELD_SONGNAME, Database.FIELD_FILE_SHA1, Database.FIELD_FILE_SHA1,
-           SONGS_TABLENAME, FIELD_FINGERPRINTED)
+           SONGS_TABLENAME, Database.FIELD_SONGGROUP, FIELD_FINGERPRINTED)
 
     # drops
     DROP_FINGERPRINTS = "DROP TABLE IF EXISTS %s;" % FINGERPRINTS_TABLENAME
@@ -211,12 +212,12 @@ class SQLDatabase(Database):
         with self.cursor() as cur:
             cur.execute(self.UPDATE_SONG_FINGERPRINTED, (sid,))
 
-    def get_songs(self):
+    def get_songs(self, group):
         """
-        Return songs that have the fingerprinted flag set TRUE (1).
+        Return songs that have the fingerprinted flag set TRUE (1) in the given group.
         """
         with self.cursor(cursor_type=DictCursor) as cur:
-            cur.execute(self.SELECT_SONGS)
+            cur.execute(self.SELECT_SONGS, (group,))
             for row in cur:
                 yield row
 
@@ -235,7 +236,7 @@ class SQLDatabase(Database):
         with self.cursor() as cur:
             cur.execute(self.INSERT_FINGERPRINT, (hash, sid, offset))
 
-    def insert_song(self, songname, file_hash, group=None):
+    def insert_song(self, songname, file_hash, group):
         """
         Inserts song in the database and returns the ID of the inserted record.
         """

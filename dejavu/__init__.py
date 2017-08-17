@@ -9,40 +9,41 @@ import sys
 
 class Dejavu(object):
 
-    SONG_ID = "song_id"
+    SONG_ID = 'song_id'
     SONG_NAME = 'song_name'
     CONFIDENCE = 'confidence'
     MATCH_TIME = 'match_time'
     OFFSET = 'offset'
     OFFSET_SECS = 'offset_seconds'
 
-    def __init__(self, config):
+    def __init__(self, config, group):
         super(Dejavu, self).__init__()
 
         self.config = config
+        self.group = group
 
         # initialize db
-        db_cls = get_database(config.get("database_type", None))
+        db_cls = get_database(config.get('database_type', None))
 
-        self.db = db_cls(**config.get("database", {}))
+        self.db = db_cls(**config.get('database', {}))
         self.db.setup()
 
         # if we should limit seconds fingerprinted,
         # None|-1 means use entire track
-        self.limit = self.config.get("fingerprint_limit", None)
+        self.limit = self.config.get('fingerprint_limit', None)
         if self.limit == -1:  # for JSON compatibility
             self.limit = None
         self.get_fingerprinted_songs()
 
     def get_fingerprinted_songs(self):
         # get songs previously indexed
-        self.songs = self.db.get_songs()
+        self.songs = self.db.get_songs(self.group)
         self.songhashes_set = set()  # to know which ones we've computed before
         for song in self.songs:
             song_hash = song[Database.FIELD_FILE_SHA1]
             self.songhashes_set.add(song_hash)
 
-    def fingerprint_directory(self, path, extensions, nprocesses=None, group=None):
+    def fingerprint_directory(self, path, extensions, nprocesses=None):
         # Try to use the maximum amount of processes if not given.
         try:
             nprocesses = nprocesses or multiprocessing.cpu_count()
@@ -58,7 +59,7 @@ class Dejavu(object):
 
             # don't refingerprint already fingerprinted files
             if decoder.unique_hash(filename) in self.songhashes_set:
-                print "%s already fingerprinted, continuing..." % filename
+                print '%s already fingerprinted, continuing...' % filename
                 continue
 
             filenames_to_fingerprint.append(filename)
@@ -80,11 +81,11 @@ class Dejavu(object):
             except StopIteration:
                 break
             except:
-                print("Failed fingerprinting")
+                print('Failed fingerprinting')
                 # Print traceback because we can't reraise it here
                 traceback.print_exc(file=sys.stdout)
             else:
-                sid = self.db.insert_song(song_name, file_hash, group)
+                sid = self.db.insert_song(song_name, file_hash, self.group)
 
                 self.db.insert_hashes(sid, hashes)
                 self.db.set_song_fingerprinted(sid)
@@ -93,13 +94,13 @@ class Dejavu(object):
         pool.close()
         pool.join()
 
-    def fingerprint_file(self, filepath, song_name=None, group=None):
+    def fingerprint_file(self, filepath, song_name=None):
         songname = decoder.path_to_songname(filepath)
         song_hash = decoder.unique_hash(filepath)
         song_name = song_name or songname
         # don't refingerprint already fingerprinted files
         if song_hash in self.songhashes_set:
-            print "%s already fingerprinted, continuing..." % song_name
+            print '%s already fingerprinted, continuing...' % song_name
             sid = None
         else:
             song_name, hashes, file_hash = _fingerprint_worker(
@@ -107,7 +108,7 @@ class Dejavu(object):
                 self.limit,
                 song_name=song_name
             )
-            sid = self.db.insert_song(song_name, file_hash, group)
+            sid = self.db.insert_song(song_name, file_hash, self.group)
 
             self.db.insert_hashes(sid, hashes)
             self.db.set_song_fingerprinted(sid)
@@ -185,11 +186,11 @@ def _fingerprint_worker(filename, limit=None, song_name=None):
 
     for channeln, channel in enumerate(channels):
         # TODO: Remove prints or change them into optional logging.
-        print("Fingerprinting channel %d/%d for %s" % (channeln + 1,
+        print('Fingerprinting channel %d/%d for %s' % (channeln + 1,
                                                        channel_amount,
                                                        filename))
         hashes = fingerprint.fingerprint(channel, Fs=Fs)
-        print("Finished channel %d/%d for %s" % (channeln + 1, channel_amount,
+        print('Finished channel %d/%d for %s' % (channeln + 1, channel_amount,
                                                  filename))
         result |= set(hashes)
 
